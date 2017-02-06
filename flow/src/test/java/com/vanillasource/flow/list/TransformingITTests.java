@@ -20,14 +20,13 @@ package com.vanillasource.flow.list;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.Consumer;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 import static java.util.Collections.*;
 import static java.util.Arrays.asList;
 import com.vanillasource.flow.basic.*;
+import com.vanillasource.flow.multiplex.*;
 import com.vanillasource.flow.Flow;
 
 @Test
@@ -59,18 +58,18 @@ public class TransformingITTests {
                "<p>systemC:FATAL:dead</p>"));
    }
 
-   /*
    public void testSeveritySplitProcessingChain() throws Exception {
-      Pump<String> pump = new Pump<>(LOGENTRIES.stream());
-      Filter<String> sanitizer = new Filter<>(asList(pump), new LineSanitizer());
-      Station<String, String> htmlizer = new Station<>(asList(sanitizer),
-            new PartitionedValve<>(new SeveritySplitter(), SeverityBasedHtmlizer.FACTORY));
-      Barrel<String> barrel = new Barrel<>(asList(htmlizer));
+      ListSourceFlow<String> source = new ListSourceFlow<>(LOGENTRIES);
+      FilterFlow<String> sanitizer = new FilterFlow<>(source, line -> line.split(":").length == 3);
+      MultiplexingFlow<String, Severity, String> htmlizer = new MultiplexingFlow<>(sanitizer,
+            input -> Severity.valueOf(input.split(":")[1]),
+            (severity, upstream) -> new TransformingFlow<>(upstream, (line, output) -> output.accept("<p class=\""+severity+"\">"+line+"</p>")));
+      ListTargetFlow<String> target = new ListTargetFlow<>(htmlizer);
 
-      barrel.process().join();
+      source.sendAll();
 
       assertEquals(
-            barrel.getContent(),
+            target.getObjects(),
             asList(
                "<p class=\"DEBUG\">systemA:DEBUG:nothing important is happening</p>",
                "<p class=\"WARN\">systemA:WARN:something is now happening</p>",
@@ -78,7 +77,6 @@ public class TransformingITTests {
                "<p class=\"ERROR\">systemA:ERROR:i don't feel so good</p>",
                "<p class=\"FATAL\">systemC:FATAL:dead</p>"));
    }
-   */
 
    public void testTypeSwitchLinearChain() throws Exception {
       ListSourceFlow<String> source = new ListSourceFlow<>(LOGENTRIES);
@@ -135,37 +133,8 @@ public class TransformingITTests {
       }
    }
 
-   /*
    public static enum Severity {
       DEBUG, WARN, ERROR, FATAL;
    }
-
-   public static class SeveritySplitter implements Function<String, Severity> {
-      @Override
-      public Severity apply(String input) {
-         return Severity.valueOf(input.split(":")[1]);
-      }
-      
-      @Override
-      public String toString() {
-         return "Severity splitter v1";
-      }
-   }
-
-   public static class SeverityBasedHtmlizer implements Function<String, Optional<? extends String>> {
-      public static final Function<Severity, SeverityBasedHtmlizer> FACTORY =
-         named(SeverityBasedHtmlizer::new, "Severity based htmlizer v1");
-      private Severity severity;
-
-      public SeverityBasedHtmlizer(Severity severity) {
-         this.severity = severity;
-      }
-
-      @Override
-      public Optional<String> apply(String line) {
-         return Optional.of("<p class=\""+severity+"\">"+line+"</p>");
-      }
-   }
-   */
 }
 
