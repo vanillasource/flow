@@ -26,10 +26,9 @@ import java.util.function.BiConsumer;
  * A flow that connects to a previous flow and transforms its output (input to this flow) to this output.
  */
 public final class TransformingFlow<I, O> implements Flow<O> {
-   private final ConsumerFlow<O> consumerFlow;
+   private final ConsumerFlow<O> consumerFlow = new ConsumerFlow<>();
 
    public TransformingFlow(Flow<I> upstream, BiConsumer<I, Consumer<O>> processor) {
-      this.consumerFlow = new ConsumerFlow<>();
       upstream.registerDownstream(input -> processor.accept(input, consumerFlow));
    }
 
