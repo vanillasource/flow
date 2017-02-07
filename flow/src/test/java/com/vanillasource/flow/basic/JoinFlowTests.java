@@ -18,22 +18,39 @@
 
 package com.vanillasource.flow.basic;
 
-import com.vanillasource.flow.Flow;
+import org.testng.annotations.*;
+import static org.testng.Assert.*;
+import static org.mockito.Mockito.*;
 import java.util.function.Consumer;
-import java.util.List;
+import static java.util.Arrays.*;
 
-/**
- * A flow that joins multiple upstream flows into one.
- */
-public final class JoinFlow<O> implements Flow<O> {
-   private ConsumerFlow<O> consumerFlow = new ConsumerFlow<>();
+@Test
+public class JoinFlowTests {
+   private ConsumerFlow<String> input1;
+   private ConsumerFlow<String> input2;
+   private JoinFlow<String> flow;
+   private Consumer<String> output;
 
-   public JoinFlow(List<Flow<? extends O>> upstreams) {
-      upstreams.forEach(upstream -> upstream.registerDownstream(consumerFlow));
+   public void testForwardObjectsFromInput1() {
+      input1.accept("Ni");
+
+      verify(output).accept("Ni");
    }
 
-   public void registerDownstream(Consumer<? super O> downstream) {
-      consumerFlow.registerDownstream(downstream);
+   public void testForwardObjectsFromInput2() {
+      input1.accept("Ni");
+
+      verify(output).accept("Ni");
+   }
+
+   @BeforeMethod
+   @SuppressWarnings("unchecked")
+   protected void setUp() {
+      input1 = new ConsumerFlow<>();
+      input2 = new ConsumerFlow<>();
+      flow = new JoinFlow<>(asList(input1, input2));
+      output = mock(Consumer.class);
+      flow.registerDownstream(output);
    }
 }
 
