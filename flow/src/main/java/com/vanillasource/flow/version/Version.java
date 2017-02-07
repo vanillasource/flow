@@ -21,14 +21,14 @@ package com.vanillasource.flow.version;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.function.Consumer;
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
 /**
  * A version that stores the structure too.
  */
 public final class Version {
-   public static final Version ZERO = new Version("");
+   public static final Version ZERO = Version.from("");
    private final String hexHash;
 
    private Version(String hexHash) {
@@ -52,8 +52,10 @@ public final class Version {
    public static Version from(String versionIndicator) {
       try {
          MessageDigest hashDigest = MessageDigest.getInstance("SHA-256");
-         hashDigest.update(versionIndicator.getBytes());
+         hashDigest.update(versionIndicator.getBytes("UTF-8"));
          return new Version(toHex(hashDigest.digest()));
+      } catch (UnsupportedEncodingException e) {
+         throw new IllegalStateException("can not use UTF-8 characterset", e);
       } catch (NoSuchAlgorithmException e) {
          throw new IllegalStateException("can not initialize hashing algorithm", e); 
       }  
@@ -76,5 +78,23 @@ public final class Version {
     */
    public static Version deserialize(String serializedVersion) {
       return new Version(serializedVersion);
+   }
+
+   @Override
+   public String toString() {
+      return serialize();
+   }
+
+   @Override
+   public boolean equals(Object o) {
+      if ((o == null) || (!(o instanceof Version))) {
+         return false;
+      }
+      return hexHash.equals(((Version) o).hexHash);
+   }
+
+   @Override
+   public int hashCode() {
+      return hexHash.hashCode();
    }
 }
